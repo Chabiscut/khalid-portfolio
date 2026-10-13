@@ -51,16 +51,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-Set `DATABASE_URL` in the Vercel environment used by the deployment. The build
-runs `prisma migrate deploy` before Next.js, so the database schema is applied
-before pages query it. For a new, empty database, deploying the project applies
-the checked-in migrations automatically.
+Set `DATABASE_URL` in the Vercel environment used by the deployment to your
+Neon pooled connection string, which the application uses at runtime. Also set
+`DIRECT_URL` to Neon’s direct (unpooled) connection string. Prisma migrations
+use `DIRECT_URL` so they can acquire the PostgreSQL advisory lock; if it is not
+set, Prisma falls back to `DATABASE_URL`.
+
+The build runs `prisma migrate deploy` before Next.js, so the database schema
+is applied before pages query it. For a new, empty database, deploying the
+project applies the checked-in migrations automatically.
 
 If you already created the production schema with `prisma db push`, do not
 deploy the initial migration until you have confirmed that the existing schema
 matches it. Baseline that database once using
 `npx prisma migrate resolve --applied 20261013000000_init` with
-`DATABASE_URL` pointing to that database, then redeploy. If the schema is
+`DIRECT_URL` pointing to that database, then redeploy. If the schema is
 partial or differs from the migration, back it up and reconcile it before
 deploying; do not baseline a mismatched schema.
 
