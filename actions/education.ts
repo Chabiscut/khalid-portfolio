@@ -9,9 +9,9 @@ import { z } from "zod";
 const educationSchema = z.object({
   institution: z.string().trim().min(2, "Institution name is required"),
   degree: z.string().trim().min(2, "Degree is required"),
-  field: z.string().optional(),
-  description: z.string().optional(),
-  location: z.string().optional(),
+  field: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  location: z.string().trim().optional(),
   startDate: z.iso.date("Enter a valid start date"),
   endDate: z.iso.date("Enter a valid end date").optional(),
   current: z.boolean(),
@@ -57,9 +57,9 @@ export async function createEducation(formData: FormData) {
     data: {
       institution: result.data.institution,
       degree: result.data.degree,
-      field: result.data.field,
-      description: result.data.description,
-      location: result.data.location,
+      field: result.data.field || null,
+      description: result.data.description || null,
+      location: result.data.location || null,
       startDate: new Date(result.data.startDate),
       endDate: result.data.endDate
         ? new Date(result.data.endDate)
@@ -112,9 +112,9 @@ export async function updateEducation(
     data: {
       institution: result.data.institution,
       degree: result.data.degree,
-      field: result.data.field,
-      description: result.data.description,
-      location: result.data.location,
+      field: result.data.field || null,
+      description: result.data.description || null,
+      location: result.data.location || null,
       startDate: new Date(result.data.startDate),
       endDate: result.data.endDate
         ? new Date(result.data.endDate)
