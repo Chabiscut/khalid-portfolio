@@ -49,6 +49,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
+Set `DATABASE_URL` in the Vercel environment used by the deployment. The build
+runs `prisma migrate deploy` before Next.js, so the database schema is applied
+before pages query it. For a new, empty database, deploying the project applies
+the checked-in migrations automatically.
+
+If you already created the production schema with `prisma db push`, do not
+deploy the initial migration until you have confirmed that the existing schema
+matches it. Baseline that database once using
+`npx prisma migrate resolve --applied 20261013000000_init` with
+`DATABASE_URL` pointing to that database, then redeploy. If the schema is
+partial or differs from the migration, back it up and reconcile it before
+deploying; do not baseline a mismatched schema.
+
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

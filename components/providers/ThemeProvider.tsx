@@ -24,10 +24,14 @@ function getPreferredTheme(): Theme {
     return "light";
   }
 
-  const storedTheme = window.localStorage.getItem("theme");
+  try {
+    const storedTheme = window.localStorage.getItem("theme");
 
-  if (storedTheme === "light" || storedTheme === "dark") {
-    return storedTheme;
+    if (storedTheme === "light" || storedTheme === "dark") {
+      return storedTheme;
+    }
+  } catch {
+    // Fall back to the system preference when browser storage is unavailable.
   }
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches

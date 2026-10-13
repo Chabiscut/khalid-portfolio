@@ -150,7 +150,7 @@ export default async function Hero() {
                 <div className="relative h-[360px] w-[300px] overflow-hidden rounded-[1.5rem] bg-gray-100 sm:h-[420px] sm:w-[350px]">
 
                   <Image
-                    src="/image/profile.jpeg"
+                    src="/Image/profile.jpeg"
                     alt="Ahmad Khalid Al Mujahid"
                     fill
                     priority
