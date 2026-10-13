@@ -1,29 +1,33 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 const educationSchema = z.object({
-  institution: z.string().min(2, "Institution name is required"),
-  degree: z.string().min(2, "Degree is required"),
+  institution: z.string().trim().min(2, "Institution name is required"),
+  degree: z.string().trim().min(2, "Degree is required"),
   field: z.string().optional(),
   description: z.string().optional(),
   location: z.string().optional(),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().optional(),
+  startDate: z.iso.date("Enter a valid start date"),
+  endDate: z.iso.date("Enter a valid end date").optional(),
   current: z.boolean(),
   sortOrder: z.number().int().min(0),
+}).superRefine((value, context) => {
+  if (value.endDate && value.endDate < value.startDate) {
+    context.addIssue({
+      code: "custom",
+      path: ["endDate"],
+      message: "End date must be on or after the start date.",
+    });
+  }
 });
 
 export async function createEducation(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = educationSchema.safeParse({
     institution: formData.get("institution"),
@@ -75,11 +79,7 @@ export async function updateEducation(
   educationId: string,
   formData: FormData
 ) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = educationSchema.safeParse({
     institution: formData.get("institution"),
@@ -131,11 +131,7 @@ export async function updateEducation(
 }
 
 export async function deleteEducation(educationId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   await prisma.education.delete({
     where: {

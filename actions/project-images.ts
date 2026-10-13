@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
 import { revalidatePath } from "next/cache";
@@ -13,11 +13,7 @@ const projectImageSchema = z.object({
 });
 
 export async function addProjectImage(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const file = formData.get("file");
 
@@ -133,11 +129,7 @@ await prisma.projectImage.create({
 }
 
 export async function deleteProjectImage(imageId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const image = await prisma.projectImage.findUnique({
     where: {

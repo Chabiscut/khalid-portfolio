@@ -1,31 +1,34 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 const certificationSchema = z.object({
-  name: z.string().min(2, "Certificate name is required"),
-  issuer: z.string().min(2, "Issuer is required"),
+  name: z.string().trim().min(2, "Certificate name is required"),
+  issuer: z.string().trim().min(2, "Issuer is required"),
   description: z.string().optional(),
   credentialId: z.string().optional(),
-  credentialUrl: z
-    .string()
-    .url("Credential URL must be a valid URL")
+  credentialUrl: z.url("Credential URL must be a valid URL")
+    .refine((value) => /^https?:\/\//i.test(value), "Credential URL must use HTTP or HTTPS")
     .optional(),
-  issueDate: z.string().min(1, "Issue date is required"),
-  expiryDate: z.string().optional(),
+  issueDate: z.iso.date("Enter a valid issue date"),
+  expiryDate: z.iso.date("Enter a valid expiry date").optional(),
   sortOrder: z.number().int().min(0),
+}).superRefine((value, context) => {
+  if (value.expiryDate && value.expiryDate < value.issueDate) {
+    context.addIssue({
+      code: "custom",
+      path: ["expiryDate"],
+      message: "Expiry date must be on or after the issue date.",
+    });
+  }
 });
 
 export async function createCertification(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = certificationSchema.safeParse({
     name: formData.get("name"),
@@ -69,11 +72,7 @@ export async function updateCertification(
   certificationId: string,
   formData: FormData
 ) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = certificationSchema.safeParse({
     name: formData.get("name"),
@@ -117,11 +116,7 @@ export async function updateCertification(
 }
 
 export async function deleteCertification(certificationId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   await prisma.certification.delete({
     where: {

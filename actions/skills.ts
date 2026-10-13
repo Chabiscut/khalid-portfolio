@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -20,11 +20,7 @@ const skillSchema = z.object({
 });
 
 export async function createSkill(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = skillSchema.safeParse({
     name: formData.get("name"),
@@ -60,11 +56,7 @@ export async function updateSkill(
   skillId: string,
   formData: FormData
 ) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = skillSchema.safeParse({
     name: formData.get("name"),
@@ -100,11 +92,7 @@ export async function updateSkill(
 }
 
 export async function deleteSkill(skillId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   await prisma.skill.delete({
     where: {

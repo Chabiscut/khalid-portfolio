@@ -1,14 +1,14 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 const experienceSchema = z.object({
-  company: z.string().min(2, "Company name is required"),
-  position: z.string().min(2, "Position is required"),
+  company: z.string().trim().min(2, "Company name is required"),
+  position: z.string().trim().min(2, "Position is required"),
   description: z.string().optional(),
   location: z.string().optional(),
   type: z.enum([
@@ -18,18 +18,22 @@ const experienceSchema = z.object({
     "FREELANCE",
     "PROJECT",
   ]),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().optional(),
+  startDate: z.iso.date("Enter a valid start date"),
+  endDate: z.iso.date("Enter a valid end date").optional(),
   current: z.boolean(),
   sortOrder: z.number().int().min(0),
+}).superRefine((value, context) => {
+  if (value.endDate && value.endDate < value.startDate) {
+    context.addIssue({
+      code: "custom",
+      path: ["endDate"],
+      message: "End date must be on or after the start date.",
+    });
+  }
 });
 
 export async function createExperience(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = experienceSchema.safeParse({
     company: formData.get("company"),
@@ -81,11 +85,7 @@ export async function updateExperience(
   experienceId: string,
   formData: FormData
 ) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = experienceSchema.safeParse({
     company: formData.get("company"),
@@ -137,11 +137,7 @@ export async function updateExperience(
 }
 
 export async function deleteExperience(experienceId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   await prisma.experience.delete({
     where: {

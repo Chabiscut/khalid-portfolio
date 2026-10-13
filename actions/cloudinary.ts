@@ -1,15 +1,10 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import cloudinary from "@/lib/cloudinary";
-import { redirect } from "next/navigation";
 
 export async function uploadProjectImage(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const file = formData.get("file");
 

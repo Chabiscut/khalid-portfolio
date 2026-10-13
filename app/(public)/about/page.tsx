@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, Code2, Database, Globe, Layers } from "lucide-react";
 
 const interests = [
@@ -187,10 +188,10 @@ export default function AboutPage() {
               </h2>
             </div>
 
-            <a href="/#contact" className="btn-primary">
+            <Link href="/#contact" className="btn-primary">
               Get in touch
               <ArrowRight size={17} />
-            </a>
+            </Link>
           </div>
         </div>
       </section>

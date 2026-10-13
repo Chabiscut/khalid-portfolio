@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import cloudinary from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -28,11 +28,7 @@ const settingsSchema = z.object({
 });
 
 export async function saveSiteSettings(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = settingsSchema.safeParse({
     siteTitle: formData.get("siteTitle"),
@@ -76,11 +72,7 @@ export async function saveSiteSettings(formData: FormData) {
 }
 
 export async function uploadResume(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const file = formData.get("resume");
 

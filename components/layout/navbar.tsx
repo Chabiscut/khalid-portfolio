@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore, useState } from "react";
 import Link from "next/link";
 import { Menu, X, Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 const navItems = [
   { name: "Home", href: "/#home" },
@@ -13,18 +13,19 @@ const navItems = [
   { name: "Education", href: "/education" },
   { name: "Certificates", href: "/certificates" },
   { name: "Projects", href: "/projects" },
+  { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/#contact" },
 ];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const { theme, setTheme } = useTheme();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -34,8 +35,6 @@ export default function Navbar() {
     <header className="fixed left-0 right-0 top-0 z-50">
       <div className="container-custom pt-4">
         <nav className="glass flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
-
-          {/* Logo */}
           <Link
             href="/"
             className="text-lg font-bold tracking-tight text-black"
@@ -43,7 +42,6 @@ export default function Navbar() {
             AK<span className="text-gray-400">.</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden items-center gap-7 md:flex">
             {navItems.map((item) => (
               <Link
@@ -56,7 +54,6 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop Actions */}
           <div className="hidden items-center gap-2 md:flex">
             {mounted ? (
               <button
@@ -65,11 +62,7 @@ export default function Navbar() {
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition hover:bg-gray-100 hover:text-black"
                 aria-label="Toggle theme"
               >
-                {theme === "dark" ? (
-                  <Sun size={17} />
-                ) : (
-                  <Moon size={17} />
-                )}
+                {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
             ) : (
               <div className="h-9 w-9 rounded-full border border-gray-200" />
@@ -80,7 +73,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Actions */}
           <div className="flex items-center gap-2 md:hidden">
             {mounted ? (
               <button
@@ -89,11 +81,7 @@ export default function Navbar() {
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600"
                 aria-label="Toggle theme"
               >
-                {theme === "dark" ? (
-                  <Sun size={17} />
-                ) : (
-                  <Moon size={17} />
-                )}
+                {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
             ) : (
               <div className="h-9 w-9 rounded-full border border-gray-200" />
@@ -110,7 +98,6 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Mobile Menu */}
         {isOpen && (
           <div className="glass mt-2 rounded-2xl border border-gray-200 p-4 shadow-sm md:hidden">
             <div className="flex flex-col gap-1">

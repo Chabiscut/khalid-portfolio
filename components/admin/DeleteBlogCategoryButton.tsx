@@ -16,8 +16,7 @@ categoryName,
 const [isPending, startTransition] = useTransition();
 
 function handleDelete() {
-const confirmed = window.confirm(
-);
+const confirmed = window.confirm(`Delete "${categoryName}"? Its posts will remain but become uncategorized.`);
 
 if (!confirmed) return;
 

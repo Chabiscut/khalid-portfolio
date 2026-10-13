@@ -49,7 +49,7 @@ Back to Blog
         <FolderOpen size={42} className="mb-4 text-muted-foreground" />
         <h2 className="text-xl font-semibold">No categories yet</h2>
         <p className="mt-2 max-w-md text-muted-foreground">
-          Create a category when you're ready to organize your blog posts.
+          Create a category when you are ready to organize your blog posts.
         </p>
       </div>
     ) : (

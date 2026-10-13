@@ -38,13 +38,21 @@ export default async function AdminBlogPage() {
             </p>
           </div>
 
-          <Link
-            href="/admin/blog/new"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:opacity-90"
-          >
-            <Plus size={18} />
-            Add Blog Post
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/admin/blog/categories"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border px-5 py-3 font-medium transition hover:bg-muted"
+            >
+              Manage Categories
+            </Link>
+            <Link
+              href="/admin/blog/new"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:opacity-90"
+            >
+              <Plus size={18} />
+              Add Blog Post
+            </Link>
+          </div>
         </div>
 
         {posts.length === 0 ? (

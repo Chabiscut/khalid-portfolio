@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,11 +19,7 @@ const technologySchema = z.object({
 });
 
 export async function createTechnology(formData: FormData) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = technologySchema.safeParse({
     name: formData.get("name"),
@@ -51,11 +47,7 @@ export async function updateTechnology(
   technologyId: string,
   formData: FormData
 ) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   const result = technologySchema.safeParse({
     name: formData.get("name"),
@@ -83,11 +75,7 @@ export async function updateTechnology(
 }
 
 export async function deleteTechnology(technologyId: string) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
   await prisma.technology.delete({
     where: {

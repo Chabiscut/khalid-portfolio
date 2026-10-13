@@ -1,13 +1,13 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 const blogPostSchema = z.object({
-  title: z.string().min(2, "Title is required"),
+  title: z.string().trim().min(2, "Title is required"),
   slug: z
     .string()
     .min(2, "Slug is required")
@@ -16,18 +16,17 @@ const blogPostSchema = z.object({
       "Slug can only contain lowercase letters, numbers, and hyphens"
     ),
   excerpt: z.string().optional(),
-  content: z.string().min(1, "Content is required"),
-  coverImage: z
-    .string()
-    .url("Cover image must be a valid URL")
+  content: z.string().trim().min(1, "Content is required"),
+  coverImage: z.url("Cover image must be a valid URL")
+    .refine((value) => /^https?:\/\//i.test(value), "Cover image must use HTTP or HTTPS")
     .optional(),
   published: z.boolean(),
-  publishedAt: z.string().optional(),
+  publishedAt: z.iso.date("Enter a valid publication date").optional(),
   categoryId: z.string().optional(),
 });
 
 const categorySchema = z.object({
-  name: z.string().min(2, "Category name is required"),
+  name: z.string().trim().min(2, "Category name is required"),
   slug: z
     .string()
     .min(2, "Category slug is required")
@@ -37,15 +36,7 @@ const categorySchema = z.object({
     ),
 });
 
-function requireAdmin() {
-  return auth().then((session) => {
-    if (!session?.user) {
-      redirect("/admin/login");
-    }
 
-    return session;
-  });
-}
 
 // -------------------------
 // BLOG CATEGORY
@@ -73,7 +64,9 @@ export async function createBlogCategory(formData: FormData) {
   });
 
   revalidatePath("/admin/blog");
+  revalidatePath("/admin/blog/categories");
   revalidatePath("/blog");
+  redirect("/admin/blog/categories");
 }
 
 export async function updateBlogCategory(
@@ -104,7 +97,9 @@ export async function updateBlogCategory(
   });
 
   revalidatePath("/admin/blog");
+  revalidatePath("/admin/blog/categories");
   revalidatePath("/blog");
+  redirect("/admin/blog/categories");
 }
 
 export async function deleteBlogCategory(categoryId: string) {
@@ -117,6 +112,7 @@ export async function deleteBlogCategory(categoryId: string) {
   });
 
   revalidatePath("/admin/blog");
+  revalidatePath("/admin/blog/categories");
   revalidatePath("/blog");
 }
 
@@ -146,6 +142,17 @@ export async function createBlogPost(formData: FormData) {
     );
   }
 
+  if (result.data.categoryId) {
+    const category = await prisma.blogCategory.findUnique({
+      where: { id: result.data.categoryId },
+      select: { id: true },
+    });
+
+    if (!category) {
+      throw new Error("Selected category no longer exists.");
+    }
+  }
+
   await prisma.blogPost.create({
     data: {
       title: result.data.title,
@@ -165,6 +172,7 @@ export async function createBlogPost(formData: FormData) {
 
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
+  revalidatePath("/blog/" + result.data.slug);
 
   redirect("/admin/blog");
 }
@@ -194,6 +202,26 @@ export async function updateBlogPost(
     );
   }
 
+  const existingPost = await prisma.blogPost.findUnique({
+    where: { id: postId },
+    select: { slug: true },
+  });
+
+  if (!existingPost) {
+    throw new Error("Blog post not found.");
+  }
+
+  if (result.data.categoryId) {
+    const category = await prisma.blogCategory.findUnique({
+      where: { id: result.data.categoryId },
+      select: { id: true },
+    });
+
+    if (!category) {
+      throw new Error("Selected category no longer exists.");
+    }
+  }
+
   await prisma.blogPost.update({
     where: {
       id: postId,
@@ -217,7 +245,8 @@ export async function updateBlogPost(
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
 
-  revalidatePath(`/blog/${result.data.slug}`);
+  revalidatePath("/blog/" + existingPost.slug);
+  revalidatePath("/blog/" + result.data.slug);
 
   redirect("/admin/blog");
 }
@@ -233,6 +262,10 @@ export async function deleteBlogPost(postId: string) {
       slug: true,
     },
   });
+
+  if (!post) {
+    return;
+  }
 
   await prisma.blogPost.delete({
     where: {
@@ -254,6 +287,15 @@ export async function toggleBlogPostPublished(
 ) {
   await requireAdmin();
 
+  const post = await prisma.blogPost.findUnique({
+    where: { id: postId },
+    select: { slug: true },
+  });
+
+  if (!post) {
+    return;
+  }
+
   await prisma.blogPost.update({
     where: {
       id: postId,
@@ -266,4 +308,5 @@ export async function toggleBlogPostPublished(
 
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
+  revalidatePath("/blog/" + post.slug);
 }

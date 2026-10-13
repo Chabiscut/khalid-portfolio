@@ -4,6 +4,14 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 
 import { prisma } from "@/lib/prisma";
 
+export function isAdminEmail(email?: string | null) {
+  const adminEmail = process.env.AUTH_ADMIN_EMAIL;
+
+  return Boolean(
+    email && adminEmail && email.trim().toLowerCase() === adminEmail.trim().toLowerCase()
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
@@ -20,14 +28,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return false;
       }
 
-      return (
-        user.email.toLowerCase() ===
-        process.env.AUTH_ADMIN_EMAIL?.toLowerCase()
-      );
+      return isAdminEmail(user.email);
     },
 
     authorized({ auth, request }) {
-      const isLoggedIn = !!auth?.user;
+      const isLoggedIn = isAdminEmail(auth?.user?.email);
       const pathname = request.nextUrl.pathname;
 
       if (pathname === "/admin/login") {

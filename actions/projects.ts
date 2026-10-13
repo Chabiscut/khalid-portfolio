@@ -1,13 +1,18 @@
-"use server";
+﻿"use server";
 
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+const optionalHttpUrl = z
+  .url("Enter a valid URL")
+  .refine((value) => /^https?:\/\//i.test(value), "URL must use HTTP or HTTPS")
+  .optional();
+
 const projectSchema = z.object({
-  title: z.string().min(2, "Title is required"),
+  title: z.string().trim().min(2, "Title is required"),
 
   slug: z
     .string()
@@ -28,15 +33,15 @@ const projectSchema = z.object({
 
   status: z.enum(["DRAFT", "PUBLISHED"]),
 
-  githubUrl: z.string().optional(),
+  githubUrl: optionalHttpUrl,
 
-  liveUrl: z.string().optional(),
+  liveUrl: optionalHttpUrl,
 
   featured: z.boolean(),
 
   sortOrder: z.number().int().min(0),
 
-  technologyIds: z.array(z.string()).default([]),
+  technologyIds: z.array(z.string().min(1)).default([]),
 });
 
 export type ProjectActionState = {
@@ -47,13 +52,9 @@ export async function createProject(
   _previousState: ProjectActionState,
   formData: FormData
 ): Promise<ProjectActionState> {
-  const session = await auth();
+  await requireAdmin();
 
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
-
-  const technologyIds = formData
+  const rawTechnologyIds = formData
     .getAll("technologyIds")
     .map((value) => String(value));
 
@@ -76,13 +77,23 @@ export async function createProject(
 
     sortOrder: Number(formData.get("sortOrder") || 0),
 
-    technologyIds,
+    technologyIds: rawTechnologyIds,
   });
 
   if (!result.success) {
     return {
       error: result.error.issues[0]?.message || "Invalid form data",
     };
+  }
+
+  const uniqueTechnologyIds = [...new Set(result.data.technologyIds)];
+  const technologies = await prisma.technology.findMany({
+    where: { id: { in: uniqueTechnologyIds } },
+    select: { id: true },
+  });
+
+  if (technologies.length !== uniqueTechnologyIds.length) {
+    return { error: "One or more selected technologies no longer exist." };
   }
 
   const project = await prisma.project.create({
@@ -98,7 +109,7 @@ export async function createProject(
       sortOrder: result.data.sortOrder,
 
       technologies: {
-        create: result.data.technologyIds.map((technologyId) => ({
+        create: uniqueTechnologyIds.map((technologyId) => ({
           technologyId,
         })),
       },
@@ -117,13 +128,9 @@ export async function updateProject(
   _previousState: ProjectActionState,
   formData: FormData
 ): Promise<ProjectActionState> {
-  const session = await auth();
+  await requireAdmin();
 
-  if (!session?.user) {
-    redirect("/admin/login");
-  }
-
-  const technologyIds = formData
+  const rawTechnologyIds = formData
     .getAll("technologyIds")
     .map((value) => String(value));
 
@@ -146,13 +153,32 @@ export async function updateProject(
 
     sortOrder: Number(formData.get("sortOrder") || 0),
 
-    technologyIds,
+    technologyIds: rawTechnologyIds,
   });
 
   if (!result.success) {
     return {
       error: result.error.issues[0]?.message || "Invalid form data",
     };
+  }
+
+  const existingProject = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { slug: true },
+  });
+
+  if (!existingProject) {
+    return { error: "Project not found." };
+  }
+
+  const uniqueTechnologyIds = [...new Set(result.data.technologyIds)];
+  const technologies = await prisma.technology.findMany({
+    where: { id: { in: uniqueTechnologyIds } },
+    select: { id: true },
+  });
+
+  if (technologies.length !== uniqueTechnologyIds.length) {
+    return { error: "One or more selected technologies no longer exist." };
   }
 
   await prisma.$transaction([
@@ -179,7 +205,7 @@ export async function updateProject(
         sortOrder: result.data.sortOrder,
 
         technologies: {
-          create: result.data.technologyIds.map((technologyId) => ({
+          create: uniqueTechnologyIds.map((technologyId) => ({
             technologyId,
           })),
         },
@@ -189,16 +215,22 @@ export async function updateProject(
 
   revalidatePath("/admin/projects");
   revalidatePath("/projects");
+  revalidatePath("/projects/" + existingProject.slug);
   revalidatePath(`/projects/${result.data.slug}`);
 
   redirect("/admin/projects");
 }
 
 export async function deleteProject(projectId: string) {
-  const session = await auth();
+  await requireAdmin();
 
-  if (!session?.user) {
-    redirect("/admin/login");
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { slug: true },
+  });
+
+  if (!project) {
+    return;
   }
 
   await prisma.project.delete({
@@ -209,4 +241,5 @@ export async function deleteProject(projectId: string) {
 
   revalidatePath("/admin/projects");
   revalidatePath("/projects");
+  revalidatePath("/projects/" + project.slug);
 }
