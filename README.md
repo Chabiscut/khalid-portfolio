@@ -21,7 +21,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Open [http://localhost:3000/admin](http://localhost:3000/admin) and sign in with
 the GitHub account whose email matches `AUTH_ADMIN_EMAIL` in `.env`. Configure
 the GitHub OAuth callback URL as `http://localhost:3000/api/auth/callback/github`
-for local development.
+for local development. From any page, press **Alt+Shift+A** to open the admin
+login page. The shortcut does not bypass sign-in; only the authorized GitHub
+account can access admin pages.
 
 From the admin dashboard you can manage projects, skills, technologies,
 experience, education, certificates, blog content, and site settings. Use
