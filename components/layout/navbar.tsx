@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useSyncExternalStore, useState } from "react";
+import { useEffect, useSyncExternalStore, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 
@@ -19,6 +20,7 @@ const navItems = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -26,6 +28,31 @@ export default function Navbar() {
   );
 
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    function handleAdminShortcut(event: KeyboardEvent) {
+      const target = event.target;
+      const isEditing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches("input, textarea, select"));
+
+      if (
+        event.altKey &&
+        event.shiftKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        event.key.toLowerCase() === "a" &&
+        !isEditing
+      ) {
+        event.preventDefault();
+        router.push("/admin/login");
+      }
+    }
+
+    window.addEventListener("keydown", handleAdminShortcut);
+    return () => window.removeEventListener("keydown", handleAdminShortcut);
+  }, [router]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
