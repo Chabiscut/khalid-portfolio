@@ -117,6 +117,7 @@ export async function createProject(
   });
 
   revalidatePath("/admin/projects");
+  revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath(`/projects/${project.slug}`);
 
@@ -214,6 +215,7 @@ export async function updateProject(
   ]);
 
   revalidatePath("/admin/projects");
+  revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/projects/" + existingProject.slug);
   revalidatePath(`/projects/${result.data.slug}`);
@@ -240,6 +242,7 @@ export async function deleteProject(projectId: string) {
   });
 
   revalidatePath("/admin/projects");
+  revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/projects/" + project.slug);
 }
